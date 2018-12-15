@@ -4,7 +4,9 @@ using System.Text;
 
 namespace DependencyContainer
 {
-	class Lifetime
+	public enum Lifetime
 	{
+		singleton,
+		instPerDependency
 	}
 }

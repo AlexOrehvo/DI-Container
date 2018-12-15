@@ -4,7 +4,15 @@ using System.Text;
 
 namespace DependencyContainer
 {
-	class Implementation
+	internal class Implementation
 	{
+		private Lifetime Lifetime { get; set; }
+		private Type ImplementationType { get; }
+
+		public Implementation(Type implementationType, Lifetime lifetime)
+		{
+			this.ImplementationType = implementationType;
+			this.Lifetime = lifetime;
+		}
 	}
 }
