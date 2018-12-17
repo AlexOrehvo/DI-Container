@@ -4,10 +4,12 @@ using System.Text;
 
 namespace DependencyContainer
 {
-	internal class Implementation
+	public class Implementation
 	{
-		private Lifetime Lifetime { get; set; }
-		private Type ImplementationType { get; }
+		internal Lifetime Lifetime { get; set; }
+		internal object SingletonInstance { get; set; }
+
+		public Type ImplementationType { get; }
 
 		public Implementation(Type implementationType, Lifetime lifetime)
 		{
