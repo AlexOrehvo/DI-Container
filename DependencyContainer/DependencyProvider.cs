@@ -1,4 +1,5 @@
 ﻿	using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -12,7 +13,7 @@ namespace DependencyContainer
 		private DependenciesConfiguration configuration;
 		private Dictionary<int, Stack<Type>> recursionControl;
 
-		public TDependency Resolve<TDependency>()
+		public IEnumerable<TDependency> Resolve<TDependency>() where TDependency : class
 		{
 			Type dependency = typeof(TDependency);
 			if (dependency.IsGenericTypeDefinition)
@@ -28,12 +29,13 @@ namespace DependencyContainer
 				recursionControl[Thread.CurrentThread.ManagedThreadId] = new Stack<Type>();
 			}
 
-			return (TDependency)Resolve(dependency);
+			return Resolve(dependency).OfType<TDependency>();
 		}
 
-		internal object Resolve(Type dependency)
+		internal IEnumerable<object> Resolve(Type dependency)
 		{
-				if (dependency.IsGenericType || dependency.IsGenericTypeDefinition)
+
+			if (dependency.IsGenericType || dependency.IsGenericTypeDefinition)
 			{
 				return ResolveGeneric(dependency);
 			}
@@ -43,9 +45,9 @@ namespace DependencyContainer
 			}
 		}
 
-		private object ResolveGeneric(Type dependency)
+		private IEnumerable<object> ResolveGeneric(Type dependency)
 		{
-			List<object> result = new List<object>(); // Ошибка приведения типа
+			List<object> result = new List<object>();
 			IEnumerable<Implementation> implementations = configuration.GetImplementations(dependency)
 				.Where((impl) => !recursionControl[Thread.CurrentThread.ManagedThreadId].Contains(impl.ImplementationType));
 
@@ -61,19 +63,20 @@ namespace DependencyContainer
 				}
 			}
 
-			if (result.Count == 1)
-			{
-				return result[0];
-			}
-			else
-			{
-				return result;
-			}
+			return result;
 			
 		}
 
-		private object ResolveNonGeneric(Type dependency)
+		private IEnumerable<object> ResolveNonGeneric(Type dependency)
 		{
+			if (dependency.IsValueType)
+			{
+				return new List<object>
+				{
+					Activator.CreateInstance(dependency)
+				};
+			}
+
 			IEnumerable<Implementation> implementations =
 				configuration.GetImplementations(dependency)
 				.Where((impl) => !recursionControl[Thread.CurrentThread.ManagedThreadId].Contains(impl.ImplementationType));
@@ -95,6 +98,7 @@ namespace DependencyContainer
 							}
 						}
 					}
+					dependencyInstance = implementation.SingletonInstance;
 				} 
 				else
 				{
@@ -107,14 +111,7 @@ namespace DependencyContainer
 				}
 			}
 
-			if (result.Count == 1)
-			{
-				return result[0];
-			}
-			else
-			{
-				return result;
-			}
+			return result;
 		}
 
 		private object Create(Type type)

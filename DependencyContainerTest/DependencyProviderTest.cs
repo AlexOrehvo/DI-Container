@@ -1,4 +1,5 @@
-﻿using DependencyContainerTest.Implementations;
+﻿using DependencyContainer;
+using DependencyContainerTest.Implementations;
 using DependencyContainerTest.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -26,7 +27,14 @@ namespace DependencyContainerTest
 			provider = new DependencyContainer.DependencyProvider(configuration);
 
 			var actual = provider.Resolve<Interface1>();
-			Assert.IsInstanceOfType(actual, typeof(Interface1));
+
+			var expected = new List<Type>
+			{
+				typeof(Implementation1)
+			};
+
+			CollectionAssert.AreEquivalent(expected,
+                actual.Select((instance) => instance.GetType()).ToList());
 		}
 
 		[TestMethod]
@@ -36,8 +44,28 @@ namespace DependencyContainerTest
 			configuration.Register<Interface1, Implementation2>();
 			provider = new DependencyContainer.DependencyProvider(configuration);
 
-			var actual = provider.Resolve<IEnumerable<Interface1>>();
-			Assert.IsInstanceOfType(actual, typeof(IEnumerable<Interface1>));
+			var actual = provider.Resolve<Interface1>();
+
+			var expected = new List<Type>
+			{
+				typeof(Implementation1),
+				typeof(Implementation2),
+			};
+
+			CollectionAssert.AreEquivalent(expected,
+				actual.Select((instance) => instance.GetType()).ToList());
+		}
+
+		[TestMethod]
+		public void LifetimeTest()
+		{
+			configuration.Register<Interface1, Implementation1>(Lifetime.singleton);
+			provider = new DependencyProvider(configuration);
+
+			var instance1 = provider.Resolve<Interface1>().First();
+			var instance2 = provider.Resolve<Interface1>().First();
+
+			Assert.AreSame(instance1, instance2);
 		}
 	}
 }
